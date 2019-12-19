@@ -2,10 +2,12 @@ package Router
 
 import (
 	"fmt"
+	"github.com/alexeyco/simpletable"
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -28,6 +30,8 @@ type table struct {
 	preMiddles []string
 	//后置中间件
 	afterMiddles []string
+	//是否重复注册
+	repeat bool
 }
 
 //路由表类型
@@ -56,7 +60,13 @@ type middles struct {
 }
 
 var (
-	routeTable    *RouteTable
+	ColorRed     = "\x1b[91m"
+	ColorDefault = "\x1b[39m"
+
+	routeTable *RouteTable
+	//用来判断是否存在重复注册情况
+	shorRouteTable map[string]string
+
 	fastRouter    *fasthttprouter.Router
 	defaultRouter *Router
 )
@@ -72,7 +82,7 @@ func (router *Router) PreMiddleware(middleware ...Middleware) *Router {
 //中间件后置
 func (router *Router) AfterMiddleware(middleware ...Middleware) *Router {
 	router.afterMiddleware.lock.Lock()
-	defer router.preMiddleware.lock.Unlock()
+	defer router.afterMiddleware.lock.Unlock()
 	router.afterMiddleware.middles = middleware
 	return router
 }
@@ -84,6 +94,12 @@ func (router *Router) Register(routes ...*Route) *Router {
 	router.routeTable.lock.Lock()
 	defer router.routeTable.lock.Unlock()
 	for _, route := range routes {
+		var repeat bool
+		if method, ok := shorRouteTable[route.Path]; ok {
+			if method == route.Method {
+				repeat = true
+			}
+		}
 		var preName, afterName []string
 		pre = combineMiddles(append(route.PreMiddles, router.preMiddleware.middles...)...)
 		after = combineMiddles(append(route.AfterMiddles, router.afterMiddleware.middles...)...)
@@ -103,17 +119,19 @@ func (router *Router) Register(routes ...*Route) *Router {
 				preName = append(preName, GetFunctionName(pre[i]))
 			}
 		}
-		switch route.Method {
-		case "GET":
-			fastRouter.GET(route.Path, handleFunc)
-		case "POST":
-			fastRouter.POST(route.Path, handleFunc)
-		case "PUT":
-			fastRouter.PUT(route.Path, handleFunc)
-		case "DELETE":
-			fastRouter.DELETE(route.Path, handleFunc)
-		default:
-			panic("")
+		if repeat == false {
+			switch route.Method {
+			case "GET":
+				fastRouter.GET(route.Path, handleFunc)
+			case "POST":
+				fastRouter.POST(route.Path, handleFunc)
+			case "PUT":
+				fastRouter.PUT(route.Path, handleFunc)
+			case "DELETE":
+				fastRouter.DELETE(route.Path, handleFunc)
+			default:
+				panic("")
+			}
 		}
 		t := &table{
 			method:       route.Method,
@@ -122,8 +140,10 @@ func (router *Router) Register(routes ...*Route) *Router {
 			handleFunc:   GetFunctionName(route.HandleFunc),
 			preMiddles:   preName,
 			afterMiddles: afterName,
+			repeat:       repeat,
 		}
 		router.routeTable.tables = append(router.routeTable.tables, t)
+		shorRouteTable[route.Path] = route.Method
 	}
 	return router
 }
@@ -138,6 +158,7 @@ func (router *Router) Run(listenPort string) {
 	}()
 }
 func init() {
+	shorRouteTable = make(map[string]string)
 	fastRouter = fasthttprouter.New()
 	defaultRouter = &Router{
 		preMiddleware:   &middles{},
@@ -159,12 +180,79 @@ func combineMiddles(middles ...Middleware) (combined []Middleware) {
 	return
 }
 
-//路由表
-func ListRoutes() {
-
+//终端打印已注册的路由表
+func (router *Router) PrintRouteTable() {
+	table := simpletable.New()
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{
+				Align: simpletable.AlignLeft,
+				Text:  "Method",
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  "Path",
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  "Name",
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  "HandleFunc",
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  "Pre-middleware",
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  "After-middleware",
+			},
+		},
+	}
+	for _, v := range router.routeTable.tables {
+		var method, path string = v.method, v.path
+		if v.repeat == true {
+			method = red(method)
+			path = red(path)
+		}
+		row := []*simpletable.Cell{
+			{
+				Align: simpletable.AlignLeft,
+				Text:  method,
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  path,
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  v.name,
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  v.handleFunc,
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  strings.Join(v.preMiddles, "\r\n"),
+			},
+			{
+				Align: simpletable.AlignLeft,
+				Text:  strings.Join(v.afterMiddles, "\r\n"),
+			},
+		}
+		table.Body.Cells = append(table.Body.Cells, row)
+	}
+	table.SetStyle(simpletable.StyleMarkdown)
+	fmt.Println(table)
 }
 
 //获取函数名
 func GetFunctionName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+func red(s string) string {
+	return fmt.Sprintf("%s%s%s", ColorRed, s, ColorDefault)
 }
