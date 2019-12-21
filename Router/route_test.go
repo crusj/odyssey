@@ -7,7 +7,7 @@ import (
 )
 
 func TestRouter_Register(t *testing.T) {
-	defaultRouter.Register([]*Route{
+	DefaultRouter.Register([]*Route{
 		&Route{
 			Method:       "GET",
 			Path:         "/test_register",
@@ -17,13 +17,13 @@ func TestRouter_Register(t *testing.T) {
 		},
 	}...)
 	time.Sleep(time.Second * 1)
-	if len(defaultRouter.routeTable.tables) != 1 {
+	if len(DefaultRouter.routeTable.tables) != 1 {
 		t.Fatal("路由注册失败")
 	}
 }
 func TestPrintRouteTable(t *testing.T) {
-	defaultRouter.PreMiddleware([]Middleware{middleware1, middleware2}...).AfterMiddleware([]Middleware{middleware3}...)
-	defaultRouter.Register([]*Route{
+	DefaultRouter.PreMiddleware([]Middleware{middleware1, middleware2}...).AfterMiddleware([]Middleware{middleware3}...)
+	DefaultRouter.Register([]*Route{
 		&Route{
 			Method:       "GET",
 			Path:         "/test_register",
@@ -39,7 +39,7 @@ func TestPrintRouteTable(t *testing.T) {
 			AfterMiddles: []Middleware{middleware2},
 		},
 	}...)
-	defaultRouter.PrintRouteTable()
+	DefaultRouter.PrintRouteTable()
 }
 func handleFuncTest(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody([]byte("handleFunc test"))

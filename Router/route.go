@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/alexeyco/simpletable"
 	"github.com/buaazp/fasthttprouter"
+	"github.com/crusj/odyssey/Utils"
 	"github.com/valyala/fasthttp"
-	"reflect"
-	"runtime"
 	"strings"
 	"sync"
 )
@@ -68,8 +67,16 @@ var (
 	shorRouteTable map[string]string
 
 	fastRouter    *fasthttprouter.Router
-	defaultRouter *Router
+	DefaultRouter *Router
 )
+
+func NewRouter() *Router {
+	return &Router{
+		preMiddleware:   &middles{},
+		afterMiddleware: &middles{},
+		routeTable:      new(RouteTable),
+	}
+}
 
 //中间件前置
 func (router *Router) PreMiddleware(middleware ...Middleware) *Router {
@@ -109,14 +116,14 @@ func (router *Router) Register(routes ...*Route) *Router {
 		if afterCount > 0 {
 			for i := 0; i <= afterCount-1; i++ {
 				handleFunc = after[i](handleFunc)
-				afterName = append(afterName, GetFunctionName(after[i]))
+				afterName = append(afterName, Utils.GetFunctionName(after[i]))
 			}
 		}
 		//串联前置中间件
 		if preCount > 0 {
 			for i := preCount - 1; i >= 0; i-- {
 				handleFunc = pre[i](handleFunc)
-				preName = append(preName, GetFunctionName(pre[i]))
+				preName = append(preName, Utils.GetFunctionName(pre[i]))
 			}
 		}
 		if repeat == false {
@@ -137,7 +144,7 @@ func (router *Router) Register(routes ...*Route) *Router {
 			method:       route.Method,
 			path:         route.Path,
 			name:         "",
-			handleFunc:   GetFunctionName(route.HandleFunc),
+			handleFunc:   Utils.GetFunctionName(route.HandleFunc),
 			preMiddles:   preName,
 			afterMiddles: afterName,
 			repeat:       repeat,
@@ -160,11 +167,7 @@ func (router *Router) Run(listenPort string) {
 func init() {
 	shorRouteTable = make(map[string]string)
 	fastRouter = fasthttprouter.New()
-	defaultRouter = &Router{
-		preMiddleware:   &middles{},
-		afterMiddleware: &middles{},
-		routeTable:      new(RouteTable),
-	}
+	DefaultRouter = NewRouter()
 }
 
 //合并中间件，去掉重复的
@@ -249,10 +252,6 @@ func (router *Router) PrintRouteTable() {
 	fmt.Println(table)
 }
 
-//获取函数名
-func GetFunctionName(i interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
-}
 func red(s string) string {
 	return fmt.Sprintf("%s%s%s", ColorRed, s, ColorDefault)
 }
