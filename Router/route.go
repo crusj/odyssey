@@ -155,10 +155,16 @@ func (router *Router) Register(routes ...*Route) *Router {
 	return router
 }
 
+type Server struct {
+	fasthttp.Server
+	Port string
+}
+
 //运行http server
-func (router *Router) Run(listenPort string) {
+func (router *Router) Run(server *Server) {
 	go func() {
-		err := fasthttp.ListenAndServe(fmt.Sprintf(":%v", listenPort), fastRouter.Handler)
+		server.Handler = fastRouter.Handler
+		err := server.ListenAndServe(":" + server.Port)
 		if err != nil {
 			panic(fmt.Sprintf("fasthttpserver run error! %v", err))
 		}
