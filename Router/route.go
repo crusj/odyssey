@@ -108,8 +108,8 @@ func (router *Router) Register(routes ...*Route) *Router {
 			}
 		}
 		var preName, afterName []string
-		pre = combineMiddles(append(route.PreMiddles, router.preMiddleware.middles...)...)
-		after = combineMiddles(append(route.AfterMiddles, router.afterMiddleware.middles...)...)
+		pre = combineMiddles(append(router.preMiddleware.middles, route.PreMiddles...)...)
+		after = combineMiddles(append(router.afterMiddleware.middles, route.AfterMiddles...)...)
 		handleFunc := route.HandleFunc
 		preCount, afterCount := len(pre), len(after)
 		//串联后置中间件
