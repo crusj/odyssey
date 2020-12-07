@@ -33,7 +33,7 @@ func TestPrintRouteTable(t *testing.T) {
 		},
 		&Route{
 			Method:       "GET",
-			Path:         "/test_register",
+			Path:         "/test_register2",
 			HandleFunc:   handleFuncTest,
 			PreMiddles:   []Middleware{middleware2},
 			AfterMiddles: []Middleware{middleware2},

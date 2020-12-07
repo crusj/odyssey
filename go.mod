@@ -11,5 +11,6 @@ require (
 	github.com/klauspost/compress v1.9.4 // indirect
 	github.com/klauspost/cpuid v1.2.2 // indirect
 	github.com/rubenv/sql-migrate v0.0.0-20191213152630-06338513c237 // indirect
+	github.com/stretchr/testify v1.4.0
 	github.com/valyala/fasthttp v1.7.0
 )
