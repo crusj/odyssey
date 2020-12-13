@@ -21,7 +21,10 @@ func NewServer(router *Router.Router, port string) *server {
 // 运行http server
 func (s *server) Run() {
 	go func() {
-		err := fasthttp.ListenAndServe(":"+s.port, s.router.FastRouter.Handler)
+		server := &fasthttp.Server{
+			Handler: CombinedColored(s.router.FastRouter.Handler),
+		}
+		err := server.ListenAndServe(":" + s.port)
 		if err != nil {
 			panic(fmt.Sprintf("fasthttpserver run error! %v", err))
 		}
