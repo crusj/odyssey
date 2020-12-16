@@ -87,8 +87,9 @@ func (router *Router) Register(routes ...*Route) *Router {
 
 // checkPathIsRepeat 检查注册路由路径是否重复
 func (router *Router) checkPathIsRepeat(route *Route) bool {
-	_, exists := RegisteredRoutes[route.Path]
-	return exists
+	method, exists := RegisteredRoutes[route.Path]
+
+	return exists && method == route.Method
 }
 
 func (router *Router) appendTable(route *Route, isRepeat bool, routePreNameSet, routeAfterNameSet []string) {
