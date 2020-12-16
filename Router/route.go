@@ -45,6 +45,8 @@ func (r *Route) RegisterToFastHttp(fastRouter *fasthttprouter.Router) {
 		fastRouter.PUT(r.Path, r.HandleFunc)
 	case "DELETE":
 		fastRouter.DELETE(r.Path, r.HandleFunc)
+	case "OPTION":
+		fastRouter.OPTIONS(r.Path, r.HandleFunc)
 	default:
 		panic(fmt.Sprintf("Bad Request Method: %s", r.Method))
 	}
