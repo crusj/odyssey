@@ -41,15 +41,19 @@ func TestPrintRouteTable(t *testing.T) {
 	}...)
 	DefaultRouter.PrintRouteTable()
 }
+
 func handleFuncTest(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody([]byte("handleFunc test"))
 }
+
 func middleware1(handleFunc HandleFunc) HandleFunc {
 	return func(ctx *fasthttp.RequestCtx) {
 		handleFunc(ctx)
 	}
 }
+
 func middleware2(handleFunc HandleFunc) HandleFunc {
+
 	return func(ctx *fasthttp.RequestCtx) {
 		handleFunc(ctx)
 	}

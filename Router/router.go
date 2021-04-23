@@ -73,7 +73,7 @@ func (router *Router) AfterMiddleware(middleware ...Middleware) *Router {
 // 注册
 func (router *Router) Register(routes ...*Route) *Router {
 	for _, route := range routes {
-		preMiddleNameSet, afterMiddleNameSet := route.ChainFunc()
+		preMiddleNameSet, afterMiddleNameSet := route.ChainFunc(router)
 		isRepeat := router.checkPathIsRepeat(route)
 		if isRepeat == false {
 			route.RegisterToFastHttp(router.FastRouter)

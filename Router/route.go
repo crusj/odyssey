@@ -15,7 +15,14 @@ type Route struct {
 }
 
 // 串联中间件与Handle
-func (r *Route) ChainFunc() (preMiddleNameSet, afterMiddleNameSet []string) {
+func (r *Route) ChainFunc(router *Router) (preMiddleNameSet, afterMiddleNameSet []string) {
+	// 串联公共后置中间件
+	if router.afterMiddleware != nil && len(router.afterMiddleware.middles) > 0 {
+		for _, item := range router.afterMiddleware.middles {
+			r.HandleFunc = item(r.HandleFunc)
+		}
+	}
+
 	// 串联后置中间件
 	if count := len(r.AfterMiddles); count > 0 {
 		for i := 0; i <= count-1; i++ {
@@ -23,6 +30,14 @@ func (r *Route) ChainFunc() (preMiddleNameSet, afterMiddleNameSet []string) {
 			afterMiddleNameSet = append(afterMiddleNameSet, Utils.GetFunctionName(r.AfterMiddles[i]))
 		}
 	}
+
+	// 串联前置中间件
+	if router.preMiddleware != nil && len(router.preMiddleware.middles) > 0 {
+		for _, item := range router.preMiddleware.middles {
+			r.HandleFunc = item(r.HandleFunc)
+		}
+	}
+
 	// 串联前置中间件
 	if count := len(r.PreMiddles); count > 0 {
 		for i := count - 1; i >= 0; i-- {
