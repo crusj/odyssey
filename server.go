@@ -23,6 +23,7 @@ func (s *server) Run() {
 	go func() {
 		server := &fasthttp.Server{
 			Handler: CombinedColored(s.router.FastRouter.Handler),
+			MaxRequestBodySize: 20 * 1024 * 1024,
 		}
 		err := server.ListenAndServe(":" + s.port)
 		if err != nil {
